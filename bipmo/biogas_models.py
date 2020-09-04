@@ -5,7 +5,7 @@ import pandas as pd
 import pyomo.environ as pyo
 import datetime as dt
 
-import bipmo.biogas_plant_model
+import bipmo.bipmo.biogas_plant_model
 import fledge.config
 import fledge.data_interface
 import fledge.electric_grid_models
@@ -26,7 +26,10 @@ class DERModel(object):
 
 
 class FlexibleBiogasModel(DERModel):
-    """Flexible Biogas plant model."""
+    """Flexible Biogas plant model.
+    This is the equivalent to FlexibleDERModel in der_models in FLEDGE
+    TODO: this should be removed and moved into der_models
+    """
 
     states: pd.Index
     controls: pd.Index
@@ -222,8 +225,9 @@ class FlexibleBiogasModel(DERModel):
     def define_optimization_objective(
             self,
             optimization_problem: pyo.ConcreteModel,
-            # Price timeseries in euros per MWh
-            price_timeseries: pd.DataFrame
+            price_timeseries: pd.DataFrame,
+            electric_grid_model: fledge.electric_grid_models.ElectricGridModelDefault = None,
+            thermal_grid_model: fledge.thermal_grid_models.ThermalGridModel = None,
     ):
 
         # Define objective.
@@ -342,8 +346,11 @@ class FlexibleBiogasPlantModel(FlexibleBiogasModel):
 
         # Obtain bipmo biogas plant model.
         flexible_biogas_plant_model = (
-            bipmo.biogas_plant_model.BiogasModel(
-                biogas_plant.at['model_name']
+            bipmo.bipmo.biogas_plant_model.BiogasModel(
+                biogas_plant.at['model_name'],
+                timestep_start=der_data.scenario_data.scenario.at['timestep_start'],
+                timestep_end=der_data.scenario_data.scenario.at['timestep_end'],
+                timestep_interval=der_data.scenario_data.scenario.at['timestep_interval'],
             )
         )
 
