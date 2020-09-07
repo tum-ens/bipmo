@@ -230,21 +230,6 @@ class FlexibleBiogasModel(DERModel):
 
         optimization_problem.objective.expr += (
             sum(
-                price_timeseries.at[timestep, 'price_value']/1000000
-                * (
-                    # Income from selling power.
-                    sum(
-                        optimization_problem.output_vector[timestep, self.der_name, output]
-                        for output in self.outputs if 'active_power' in output
-                    ) * self.timestep_interval.seconds / 3600
-                    -
-                    # Power requirements.
-                    sum(
-                        optimization_problem.output_vector[timestep, self.der_name, output]
-                        for output in self.outputs if 'act_power_own_consumption' in output
-                    ) * self.timestep_interval.seconds / 3600
-                )
-                -
                 # Substrate costs.
                 self.feedstock_cost
                 * sum(
