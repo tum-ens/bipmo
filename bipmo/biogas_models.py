@@ -184,14 +184,8 @@ class FlexibleBiogasModel(DERModel):
             optimization_problem.der_model_constraints.add(
                 optimization_problem.output_vector[self.timesteps[-1], self.der_name, self.scenario_name
                                                    + '_storage_content_m3']
-                >= self.state_vector_initial[self.scenario_name + '_storage_content_m3']
+                == self.state_vector_initial[self.scenario_name + '_storage_content_m3']
             )
-        elif self.SOC_end == 'min':
-            # Minimal SOC reached at the last step
-             optimization_problem.der_model_constraints.add(
-                 optimization_problem.output_vector[self.timesteps[-1], self.der_name, self.scenario_name + '_storage_content_m3']
-                 >= self.SOC_min
-             )
 
         # Define connection constraints.
         if electric_grid_model is not None:
