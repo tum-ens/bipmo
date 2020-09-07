@@ -75,12 +75,12 @@ class BiogasModel(object):
                 self.plant_CHP_source[self.plant_CHP_source['CHP_name'] == i]
             ])
         self.plant_CHP.index = self.plant_CHP['CHP_name']
-        self.elec_cap_list = pd.DataFrame([cap for cap in self.plant_CHP.elec_cap_kWel],
+        self.elec_cap_list = pd.DataFrame([cap for cap in self.plant_CHP.elec_cap_Wel],
                                           index=self.CHP_list,
-                                          columns=['elec_cap_kWel'])
-        self.ramp_rate_list = pd.DataFrame([rate for rate in self.plant_CHP.ramp_capacity_kW_min],
+                                          columns=['elec_cap_Wel'])
+        self.ramp_rate_list = pd.DataFrame([rate for rate in self.plant_CHP.ramp_capacity_W_min],
                                            index=self.CHP_list,
-                                           columns=['ramp_rate_kW_min'])
+                                           columns=['ramp_rate_W_min'])
 
         # Load storage data used in the scenario.
         self.plant_storage = pd.read_csv(
@@ -128,10 +128,10 @@ class BiogasModel(object):
                 + '_prod_biogas_m3_s-1',
                 # Active power requirement of the digester.
                 self.plant_scenarios['scenario_name']
-                + '_act_power_own_consumption_kWe',
+                + '_act_power_own_consumption_Wel',
                 # Heat requirement of the digester.
                 self.plant_scenarios['scenario_name']
-                + '_heat_own_consumption_kWth',
+                + '_heat_own_consumption_Wth',
                 # Storage biogas content.
                 self.plant_scenarios['scenario_name']
                 + '_storage_content_m3'
@@ -141,11 +141,11 @@ class BiogasModel(object):
         for i in range(len(self.CHP_list)):
             self.outputs = pd.Index([
                 # CHPs active power production.
-                self.plant_CHP['CHP_name'][i] + '_active_power_kWe',
+                self.plant_CHP['CHP_name'][i] + '_active_power_Wel',
                 # CHPs reactive power production.
-                self.plant_CHP['CHP_name'][i] + '_react_power_kvar',
+                self.plant_CHP['CHP_name'][i] + '_react_power_Var',
                 # CHPs heat power production.
-                self.plant_CHP['CHP_name'][i] + '_heat_kWth'
+                self.plant_CHP['CHP_name'][i] + '_heat_Wth'
                 ]).union(self.outputs)
 
             # Disturbance variables (empty).
@@ -208,29 +208,29 @@ class BiogasModel(object):
 
         # Define useful values.
         lhv_table = pd.DataFrame(
-            # Lower heating value of methane in kJ/m3.
-            [35.8e3],
+            # Lower heating value of methane in J/m3.
+            [35.8e6],
             pd.Index(['LHV_methane']),
-            pd.Index(['LHV value (in kJ/m^3)'])
+            pd.Index(['LHV value (in J/m^3)'])
         )
         temp_in = self.plant_scenarios.loc[
             # Temperature of the digestion process in °C.
             self.scenario_name, 'digester_temp']
 
-        cp_water = 4.182  # Specific heat of water in J/(K*kg) at 20°C.
+        cp_water = 4182  # Specific heat of water in J/(K*kg) at 20°C.
 
         # Define coefficients
 
             # Define the heat and power requirements coefficients.
 
         # Heat requirement to increase the introduced feedstock's temperature
-        # to the operating temperature in kJ/kg.
+        # to the operating temperature in J/kg.
         self.gain_parasitic_heat = cp_water * (
                 temp_in - self.plant_scenarios.loc[self.scenario_name, 'temperature_outside']
         )
-        # Power requirement for the stirring and pumping of the feedstock in kJe/kg
+        # Power requirement for the stirring and pumping of the feedstock in Je/kg
         # (value for cattle slurry, kept for other feedstock types).
-        self.gain_parasitic_power = 25.92
+        self.gain_parasitic_power = 25920
 
             # Define the heat and power CHP coefficients.
         self.set_gains = pd.Index([])
@@ -253,10 +253,10 @@ class BiogasModel(object):
         for i in range(0, self.number_CHP):
             for j in range(0, lhv_table.size):
                 self.gain_heat[lhv_table.size * i + j] = self.plant_CHP['therm_eff'][i] * \
-                                            lhv_table['LHV value (in kJ/m^3)'][j] * \
+                                            lhv_table['LHV value (in J/m^3)'][j] * \
                                             self.plant_feedstock['methane_content'][self.scenario_name]
                 self.gain_power[lhv_table.size * i + j] = self.plant_CHP['elec_eff'][i] * \
-                                            lhv_table['LHV value (in kJ/m^3)'][j] * \
+                                            lhv_table['LHV value (in J/m^3)'][j] * \
                                             self.plant_feedstock['methane_content'][self.scenario_name]
 
         self.gain_heat.columns = self.set_gains
@@ -303,11 +303,11 @@ class BiogasModel(object):
                         = self.gain_heat[i][0]
 
         self.control_output_matrix.loc[
-            self.scenario_name+'_act_power_own_consumption_kWe',
+            self.scenario_name+'_act_power_own_consumption_Wel',
             'mass_flow_kg_s-1_'+self.plant_scenarios['feedstock_type'][self.scenario_name]]\
             = self.gain_parasitic_power
         self.control_output_matrix.loc[
-            self.scenario_name+'_heat_own_consumption_kWth',
+            self.scenario_name+'_heat_own_consumption_Wth',
             'mass_flow_kg_s-1_'+self.plant_scenarios['feedstock_type'][self.scenario_name]]\
             = self.gain_parasitic_heat
 
@@ -358,13 +358,13 @@ class BiogasModel(object):
             # Minimum constraint for active power outputs.
             for i in self.CHP_list:
                 self.output_constraint_timeseries_minimum.loc[
-                    :, self.outputs.str.contains(i + '_active_power_kWe')] \
-                    = self.plant_CHP.loc[i, 'elec_min_kWel']
+                    :, self.outputs.str.contains(i + '_active_power_Wel')] \
+                    = self.plant_CHP.loc[i, 'elec_min_Wel']
 
             # Maximum constraint for active power outputs.
                 self.output_constraint_timeseries_maximum.loc[
-                    :, self.outputs.str.contains(i + '_active_power_kWe')] \
-                    = self.plant_CHP.loc[i, 'elec_cap_kWel']
+                    :, self.outputs.str.contains(i + '_active_power_Wel')] \
+                    = self.plant_CHP.loc[i, 'elec_cap_Wel']
 
             # Minimum constraint for storage content.
             self.output_constraint_timeseries_minimum.loc[

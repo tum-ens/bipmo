@@ -1,4 +1,4 @@
-﻿CHP_name,therm_eff,elec_eff,elec_cap_kWel,elec_min_kWel,power_factor,ramp_capacity_kW_min
-CHP_1,0.39,0.41,600,180,0.95,5.04
-CHP_2,0.37,0.39,400,120,0.95,13.16
-CHP_3,0.41,0.42,1000,0,0.95,20
+﻿CHP_name,therm_eff,elec_eff,elec_cap_Wel,elec_min_Wel,power_factor,ramp_capacity_W_min
+CHP_1,0.39,0.41,600000,180000,0.95,5040
+CHP_2,0.37,0.39,400000,120000,0.95,13160
+CHP_3,0.41,0.42,1000,0,0.95,20000

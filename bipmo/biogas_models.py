@@ -169,28 +169,28 @@ class FlexibleBiogasModel(DERModel):
                             optimization_problem.output_vector[timestep + self.timestep_interval, self.der_name, output]
                             - optimization_problem.output_vector[timestep, self.der_name, output]
                             <=
-                            self.ramp_rate_list.loc[i, 'ramp_rate_kW_min'] * self.timestep_interval.seconds/60
+                            self.ramp_rate_list.loc[i, 'ramp_rate_W_min'] * self.timestep_interval.seconds/60
                         )
                         optimization_problem.der_model_constraints.add(
                             optimization_problem.output_vector[timestep + self.timestep_interval, self.der_name, output]
                             - optimization_problem.output_vector[timestep, self.der_name, output]
                             >=
-                            - self.ramp_rate_list.loc[i, 'ramp_rate_kW_min'] * self.timestep_interval.seconds/60
+                            - self.ramp_rate_list.loc[i, 'ramp_rate_W_min'] * self.timestep_interval.seconds/60
                         )
 
         # Final SOC storage
         if self.SOC_end == 'init':
-            # Final SOC equal to initial SOC
+            # Final SOC greater or equal to initial SOC
             optimization_problem.der_model_constraints.add(
                 optimization_problem.output_vector[self.timesteps[-1], self.der_name, self.scenario_name
                                                    + '_storage_content_m3']
-                == self.state_vector_initial[self.scenario_name + '_storage_content_m3']
+                >= self.state_vector_initial[self.scenario_name + '_storage_content_m3']
             )
         elif self.SOC_end == 'min':
             # Minimal SOC reached at the last step
              optimization_problem.der_model_constraints.add(
                  optimization_problem.output_vector[self.timesteps[-1], self.der_name, self.scenario_name + '_storage_content_m3']
-                 == self.SOC_min
+                 >= self.SOC_min
              )
 
         # Define connection constraints.
@@ -236,7 +236,7 @@ class FlexibleBiogasModel(DERModel):
 
         optimization_problem.objective.expr += (
             sum(
-                price_timeseries.at[timestep, 'price_value']/1000
+                price_timeseries.at[timestep, 'price_value']/1000000
                 * (
                     # Income from selling power.
                     sum(
@@ -289,7 +289,7 @@ class FlexibleBiogasModel(DERModel):
                 )
 
             profit_vector.at[timestep, 'profit_value'] = (
-                price_timeseries.at[timestep, 'price_value']/1000
+                price_timeseries.at[timestep, 'price_value']/1000000
                 * (
                     # Income from selling power
                     sum(
@@ -390,7 +390,7 @@ class FlexibleBiogasPlantModel(FlexibleBiogasModel):
 
         # Obtain digester information
         self.time_constant = flexible_biogas_plant_model.a1
-        self.feedstock_cost = flexible_biogas_plant_model.plant_feedstock.loc[self.scenario_name, 'cost_feedstock_euro_kWh']
+        self.feedstock_cost = flexible_biogas_plant_model.plant_feedstock.loc[self.scenario_name, 'cost_feedstock_euro_Wh']
         self.feedstock_limit_type = flexible_biogas_plant_model.plant_scenarios.loc[
             self.scenario_name, 'availability_limit_type']
         self.available_feedstock = flexible_biogas_plant_model.plant_scenarios.loc[self.scenario_name, 'availability_substrate_ton_per_year']
