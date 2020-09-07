@@ -1,2 +1,2 @@
 ﻿storage_name,SOC_min_m3,SOC_max_m3,SOC_init_m3,SOC_end
-storage_1,0,2000,500,init
+storage_1,0,2000,500,min
