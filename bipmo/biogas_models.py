@@ -11,21 +11,12 @@ import fledge.data_interface
 import fledge.electric_grid_models
 import fledge.thermal_grid_models
 import fledge.utils
+import fledge.der_models
 
 logger = fledge.config.get_logger(__name__)
 
 
-class DERModel(object):
-    """DER model object."""
-
-    der_name: str
-    timesteps: pd.Index
-    active_power_nominal_timeseries: pd.Series
-    reactive_power_nominal_timeseries: pd.Series
-    thermal_power_nominal_timeseries: pd.Series
-
-
-class FlexibleBiogasModel(DERModel):
+class FlexibleBiogasModel():
     """Flexible Biogas plant model.
     This is the equivalent to FlexibleDERModel in der_models in FLEDGE
     TODO: this should be removed and moved into der_models

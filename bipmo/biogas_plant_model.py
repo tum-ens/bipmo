@@ -13,6 +13,7 @@ class BiogasModel(object):
     states: pd.Index
     controls: pd.Index
     outputs: pd.Index
+    switches: pd.Index
     disturbances: pd.Index
     state_vector_initial: pd.Series
     state_matrix: pd.DataFrame
@@ -138,6 +139,17 @@ class BiogasModel(object):
             ]),
             name='output_name'
         )
+
+        self.outputs = pd.Index([
+            # net active power output
+            'active_power',
+            # net reactive power output
+            'reactive_power',
+            # net thermal output (heat)
+            'thermal_power'
+        ]).union(self.outputs)
+
+        self.switches = pd.Index([])
         for i in range(len(self.CHP_list)):
             self.outputs = pd.Index([
                 # CHPs active power production.
@@ -147,6 +159,11 @@ class BiogasModel(object):
                 # CHPs heat power production.
                 self.plant_CHP['CHP_name'][i] + '_heat_Wth'
                 ]).union(self.outputs)
+
+            self.switches = pd.Index([
+                # CHP switch to turn on/off
+                self.plant_CHP['CHP_name'][i] + '_switch',
+            ]).union(self.switches)
 
             # Disturbance variables (empty).
         self.disturbances = pd.Index([None],
@@ -290,17 +307,37 @@ class BiogasModel(object):
                     self.state_output_matrix.loc[state, output] = 1
 
             # Define the control output matrix.
-        for i in self.controls:
-            for j in self.outputs:
-                if ('active_power' in j) and (i[0:5] == j[0:5]):
-                    self.control_output_matrix.loc[j, i]\
-                        = self.gain_power[i][0] * self.plant_CHP.loc[i[0:5], 'power_factor']
-                if ('react_power' in j) and (i[0:5] == j[0:5]):
-                    self.control_output_matrix.loc[j, i] \
-                        = self.gain_power[i][0] * (1-self.plant_CHP.loc[i[0:5], 'power_factor'])
-                if ('heat' in j) and (i[0:5] == j[0:5]):
-                    self.control_output_matrix.loc[j, i] \
-                        = self.gain_heat[i][0]
+        for control in self.controls:
+            for output in self.outputs:
+                if ('active_power_Wel' in output) and (control[0:5] == output[0:5]):
+                    self.control_output_matrix.loc[output, control]\
+                        = self.gain_power[control][0] * self.plant_CHP.loc[control[0:5], 'power_factor']
+                if ('react_power_Var' in output) and (control[0:5] == output[0:5]):
+                    self.control_output_matrix.loc[output, control] \
+                        = self.gain_power[control][0] * (1-self.plant_CHP.loc[control[0:5], 'power_factor'])
+                if ('heat_Wth' in output) and (control[0:5] == output[0:5]):
+                    self.control_output_matrix.loc[output, control] \
+                        = self.gain_heat[control][0]
+
+
+        # add net active/reactive/thermal output (without
+        for chp in self.plant_CHP['CHP_name'].to_list():
+            for control in self.controls:
+                if control[0:5] == chp:
+                    self.control_output_matrix.loc['active_power', control]\
+                        = self.gain_power[control][0] * self.plant_CHP.loc[control[0:5], 'power_factor']
+                    self.control_output_matrix.loc['reactive_power', control]\
+                        = self.gain_power[control][0] * (1-self.plant_CHP.loc[control[0:5], 'power_factor'])
+                    self.control_output_matrix.loc['thermal_power', control] \
+                        = self.gain_heat[control][0]
+
+        # substract the own power consumption from the active power output
+        # self.control_output_matrix.loc['active_power',
+        #                                'mass_flow_kg_s-1_' + self.plant_scenarios['feedstock_type'][self.scenario_name]] \
+        #     = - self.gain_parasitic_power
+        self.control_output_matrix.loc['thermal_power',
+                                       'mass_flow_kg_s-1_' + self.plant_scenarios['feedstock_type'][self.scenario_name]] \
+            = - self.gain_parasitic_heat
 
         self.control_output_matrix.loc[
             self.scenario_name+'_act_power_own_consumption_Wel',
@@ -310,6 +347,7 @@ class BiogasModel(object):
             self.scenario_name+'_heat_own_consumption_Wth',
             'mass_flow_kg_s-1_'+self.plant_scenarios['feedstock_type'][self.scenario_name]]\
             = self.gain_parasitic_heat
+
 
         # Define the initial state (either digester process starting or already active).
         def define_initial_state():
