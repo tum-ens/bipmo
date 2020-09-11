@@ -332,9 +332,9 @@ class BiogasModel(object):
                         = self.gain_heat[control][0]
 
         # substract the own power consumption from the active power output
-        # self.control_output_matrix.loc['active_power',
-        #                                'mass_flow_kg_s-1_' + self.plant_scenarios['feedstock_type'][self.scenario_name]] \
-        #     = - self.gain_parasitic_power
+        self.control_output_matrix.loc['active_power',
+                                       'mass_flow_kg_s-1_' + self.plant_scenarios['feedstock_type'][self.scenario_name]] \
+            = - self.gain_parasitic_power
         self.control_output_matrix.loc['thermal_power',
                                        'mass_flow_kg_s-1_' + self.plant_scenarios['feedstock_type'][self.scenario_name]] \
             = - self.gain_parasitic_heat
