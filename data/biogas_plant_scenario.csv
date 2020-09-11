@@ -1,3 +1,3 @@
 ﻿scenario_name,feedstock_type,storage_name,time_start,time_end,time_step,temperature_outside,CHP_name,digester_temp,init_state_digester,availability_substrate_ton_per_year,availability_limit_type
-biogas_plant_1,corn_silage,storage_1,2017-01-01T00:00:00,2017-01-02T00:00:00,01:00:00,5,CHP_1 CHP_2,55,0.05,17600,hourly
+biogas_plant_1,corn_silage,storage_1,2017-01-01T00:00:00,2017-01-02T00:00:00,01:00:00,5,CHP_1 CHP_2,55,0.0,17600,hourly
 biogas_plant_2,corn_silage,storage_1,2017-01-01T00:00:00,2017-01-02T00:00:00,01:00:00,5,CHP_3,55,0.11,17600,hourly
