@@ -5,7 +5,7 @@ import pandas as pd
 import pyomo.environ as pyo
 import datetime as dt
 
-import bipmo.bipmo.biogas_plant_model
+import bipmo.bipmo.biogas_plant_models
 import fledge.config
 import fledge.data_interface
 import fledge.electric_grid_models
@@ -316,7 +316,7 @@ class FlexibleBiogasPlantModel(FlexibleBiogasModel):
 
         # Obtain bipmo biogas plant model.
         flexible_biogas_plant_model = (
-            bipmo.bipmo.biogas_plant_model.BiogasModel(
+            bipmo.bipmo.biogas_plant_models.BiogasModel(
                 biogas_plant.at['model_name'],
                 timestep_start=der_data.scenario_data.scenario.at['timestep_start'],
                 timestep_end=der_data.scenario_data.scenario.at['timestep_end'],
