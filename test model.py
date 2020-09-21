@@ -2,7 +2,7 @@
 feedstock feed-in on biogas production"""
 
 import numpy as np
-import bipmo.biogas_plant_model
+import bipmo.biogas_plant_models
 import matplotlib.pyplot as plt
 
 # List of the biogas production potential in m3 of biogas per kg of feedstock [5]
@@ -17,8 +17,8 @@ potential_sustrate_list = [
 potential_sustrate = potential_sustrate_list[0]
 
 # Load the scenario
-scenario_name = 'scenario_1'
-bg = bipmo.biogas_plant_model.BiogasModel(scenario_name)
+scenario_name = 'biogas_plant_1'
+bg = bipmo.biogas_plant_models.SimpleBiogasPlantModel(scenario_name)
 
 # Feed-in regime
 u = np.array([0])
