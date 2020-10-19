@@ -1,4 +1,4 @@
-# Data reference
+# Data Reference
 
 ``` warning::
     This reference is work in progress.
