@@ -8,14 +8,14 @@ import pandas as pd
 import numpy as np
 import os
 
-import fledge.data_interface
-import fledge.der_models
+import bipmo.utils
+import bipmo.biogas_plant_models
 
 
 # Plot results.
 def generate_biogas_plant_plots(
-        results: fledge.data_interface.ResultsDict,
-        bg: fledge.der_models.FlexibleBiogasPlantModel,
+        results: bipmo.utils.ResultsDict,
+        bg: bipmo.biogas_plant_models.BiogasPlantModel,
         results_path: str,
         price_timeseries: pd.DataFrame = None,
         in_per_unit: bool = True,
@@ -150,7 +150,6 @@ def generate_biogas_plant_plots(
         plt.savefig(os.path.join(results_path, f'{der_name}_{state}.png'))
         plt.show()
         plt.close()
-
 
     if price_timeseries is not None:
 

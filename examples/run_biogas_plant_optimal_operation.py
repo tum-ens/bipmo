@@ -1,5 +1,7 @@
-""" Example script for setting up and solving a flexible biogas plant optimal operation problem.
-Biogas plant not connected to the grid """
+"""
+Example script for setting up and solving a flexible biogas plant optimal operation problem.
+Biogas plant not connected to the grid
+"""
 
 import pyomo.environ as pyo
 import pandas as pd
