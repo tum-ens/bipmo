@@ -62,7 +62,7 @@ The following papers have been prepared in relation to FLEDGE:
     - FLEDGE [v0.3.0](https://github.com/TUMCREATE-ESTL/fledge/releases/tag/v0.3.0) was used to preare the results for this paper.
     - The related script is [`examples/paper_2020_dlmp_combined_thermal_electric.py`](https://github.com/TUMCREATE-ESTL/fledge/blob/v0.3.0/examples/paper_2020_dlmp_combined_thermal_electric.py).
 - Troitzsch, S., Hanif, S., Zhang, K., Trpovski, A., & Hamacher, T., **Flexible Distribution Grid Demonstrator (FLEDGE): Requirements and Software Architecture**, in IEEE PES General Meeting, Atlanta, GA, USA, 2019. [`doi: 10.1109/PESGM40551.2019.8973567`](https://doi.org/10.1109/PESGM40551.2019.8973567).
-    - The paper served as an outline for the [software architecture](architecture.md) of FLEDGE.
+    - The paper served as an outline for the [software architecture] of FLEDGE.
 - D. Recalde, A. Trpovski, S. Troitzsch, K. Zhang, S. Hanif, and T. Hamacher, **A Review of Operation Methods and Simulation Requirements for Future Smart Distribution Grids**, in IEEE PES Innovative Smart Grid Technologies Conference Asia, Singapore, 2018. [`doi:10.1109/ISGT-Asia.2018.8467850`](https://doi.org/10.1109/ISGT-Asia.2018.8467850).
     - The review paper initiated the development of FLEDGE.
     
