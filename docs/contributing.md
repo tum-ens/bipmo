@@ -1,5 +1,9 @@
 # Contributing
 
+``` important::
+    Please note that this section is based on the contribution guidelines used in [CoBMo](https://github.com/TUMCREATE-ESTL/cobmo)
+```
+
 If you are keen to contribute to this project, please follow these guidelines:
 
 - Before making any change, please first discuss via issue or email with the owners of this repository.
