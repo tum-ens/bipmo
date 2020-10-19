@@ -1,32 +1,17 @@
-## FLEDGE - Flexible Distribution Grid Demonstrator
+## BiPMo – Biogas Plant Model
 
-[![](https://zenodo.org/badge/201130660.svg)](https://zenodo.org/badge/latestdoi/201130660)
+BiPMo (Biogas Plant Model) is a simulation framework for the optimized operation of a biogas plant in a given scenario that works in combination with the simulation environment [FLEDGE](https://doi.org/10.5281/zenodo.3715873).
 
-The Flexible Distribution Grid Demonstrator (FLEDGE) is a software tool for optimal operation problems of electric and thermal distribution grids along with distributed energy resources (DERs), such as flexible building loads, electric vehicle (EV) chargers, distributed generators (DGs) and energy storage systems (ESS). To this end, it implements 1) electric grid models, 2) thermal grid models, 3) DER models, and 4) optimal operation problems.
+The model is organized and implemented based on the flexible building model CoBMo: https://zenodo.org/record/3523539 
 
 ## Features
-
-- Electric grid models:
-    - Obtain nodal / branch admittance and incidence matrices¹.
-    - Obtain steady state power flow solution for nodal voltage / branch flows / losses via fixed-point algorithm / [OpenDSS](https://github.com/dss-extensions/OpenDSSDirect.py)¹.
-    - Obtain sensitivity matrices of global linear approximate grid model¹.
-    - ¹Fully enabled for unbalanced / multiphase grid configuration.
-- Thermal grid models:
-    - Obtain nodal / branch incidence matrices.
-    - Obtain thermal power flow solution for nodal head / branch flows / pumping losses.
-    - Obtain sensitivity matrices of global linear approximate grid model.
-- Distributed energy resource (DER) models:
-    - Time series models for fixed loads.
-    - Time series models for EV charging.
-    - Linear models for flexible building loads.
-- Optimal operation problems:
-    - Obtain numerical optimization problem for combined optimal operation for electric / thermal grids with DERs via [Pyomo](https://github.com/Pyomo/pyomo).
-    - Obtain electric / thermal optimal power flow solution.
-    - Obtain distribution locational marginal prices (DLMPs) for the electric / thermal grids.
+- Simulation of biogas production given different parameters
+    - Anaerobic digestion based on based on the work in https://doi.org/10.1016/j.energy.2017.12.073 and ISBN: 978-3-319-16192-1 
+- Optimal plant operation over a given planning horizon based on price timeseries
+- Support of a simple model with constant biogas production and a flexible biogas plant model with flexible feeding regime
 
 ## Work in progress
-
-Please note that the repository is under active development and the interface may change without notice. Create an [issue](https://github.com/TUMCREATE-ESTL/fledge/issues) if you have ideas / comments / criticism that may help to make the tool more useful.
+Please note that the repository is under active development and the interface may change without notice. Create an [issue](https://github.com/tum-ens/bipmo/issues) if you have ideas / comments / criticism that may help to make the tool more useful.
 
 ## Contents
 
