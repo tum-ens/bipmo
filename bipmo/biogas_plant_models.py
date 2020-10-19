@@ -1,9 +1,21 @@
+"""
+This module includes two types of discrete state-space formulations for biogas plants.
+The anaerobic digestion model in FlexibleBiogasPlantModel is based on the work in
+https://doi.org/10.1016/j.energy.2017.12.073 and ISBN: 978-3-319-16192-1
+
+The module is designed to work with fledge: https://doi.org/10.5281/zenodo.3715873
+The code is organized and implemented based on the flexible building model cobmo: https://zenodo.org/record/3523539
+"""
+
 import numpy as np
 import pandas as pd
 import scipy.linalg
 import os
 import inspect
+import typing
 import sys
+import datetime as dt
+import pyomo.environ as pyo
 
 
 class BiogasPlantModel(object):
@@ -12,11 +24,13 @@ class BiogasPlantModel(object):
     every model that inherits from it. Caution: It does not work as a standalone model!
     """
     model_type: str = None
+    der_name: str = 'Biogas Plant'
     plant_scenarios: pd.DataFrame
     states: pd.Index
     controls: pd.Index
     outputs: pd.Index
     switches: pd.Index
+    chp_schedule: pd.DataFrame
     disturbances: pd.Index
     state_vector_initial: pd.Series
     state_matrix: pd.DataFrame
@@ -30,11 +44,14 @@ class BiogasPlantModel(object):
     timestep_interval: pd.Timedelta
     timesteps: pd.Index
     disturbance_timeseries: pd.DataFrame
-    output_constraint_timeseries_maximum: pd.DataFrame
-    output_constraint_timeseries_minimum: pd.DataFrame
+    output_maximum_timeseries: pd.DataFrame
+    output_minimum_timeseries: pd.DataFrame
+    marginal_cost: float
     lhv_table: pd.DataFrame
     temp_in: float
     cp_water: float
+    feedstock_limit_type: str
+    available_feedstock: float
 
     def __init__(
             self,
@@ -58,6 +75,10 @@ class BiogasPlantModel(object):
             self.plant_scenarios['scenario_name'] == self.scenario_name]
         self.plant_scenarios.index = pd.Index([self.scenario_name])
 
+        # Load marginal cost
+        self.marginal_cost = self.plant_scenarios.loc[
+            self.scenario_name, 'marginal_cost_EUR_Wh-1']
+
         # Load feedstock data used in the scenario.
         self.plant_feedstock = pd.read_csv(
             os.path.join(base_path, 'data/biogas_plant_feedstock.csv')
@@ -67,6 +88,10 @@ class BiogasPlantModel(object):
             == self.plant_scenarios.loc[self.scenario_name, 'feedstock_type']
             ]
         self.plant_feedstock.index = pd.Index([self.scenario_name])
+        self.feedstock_limit_type = self.plant_scenarios.loc[
+            self.scenario_name, 'availability_limit_type']
+        self.available_feedstock = self.plant_scenarios.loc[
+            self.scenario_name, 'availability_substrate_ton_per_year']
 
         # Load CHP data used in the scenario.
         self.CHP_list = self.plant_scenarios.CHP_name[self.scenario_name].split()
@@ -228,6 +253,12 @@ class BiogasPlantModel(object):
                 ),
                 name='time'
             )
+        # construct default chp schedule
+        self.chp_schedule = pd.DataFrame(
+            +1.0,
+            self.timesteps,
+            self.switches
+        )
 
     def instantiate_state_space_matrices(self):
         # Instantiate empty state-space model matrices.
@@ -297,12 +328,12 @@ class BiogasPlantModel(object):
     def define_output_constraint_timeseries(self):
 
         # Instantiate constraint timeseries.
-        self.output_constraint_timeseries_maximum = pd.DataFrame(
+        self.output_maximum_timeseries = pd.DataFrame(
             +1.0 * np.infty,
             self.timesteps,
             self.outputs
         )
-        self.output_constraint_timeseries_minimum = pd.DataFrame(
+        self.output_minimum_timeseries = pd.DataFrame(
             -1.0 * np.infty,
             self.timesteps,
             self.outputs
@@ -310,24 +341,259 @@ class BiogasPlantModel(object):
 
         # Minimum constraint for active power outputs.
         for i in self.CHP_list:
-            self.output_constraint_timeseries_minimum.loc[
+            self.output_minimum_timeseries.loc[
             :, self.outputs.str.contains(i + '_active_power_Wel')] \
                 = self.plant_CHP.loc[i, 'elec_min_Wel']
 
             # Maximum constraint for active power outputs.
-            self.output_constraint_timeseries_maximum.loc[
+            self.output_maximum_timeseries.loc[
             :, self.outputs.str.contains(i + '_active_power_Wel')] \
                 = self.plant_CHP.loc[i, 'elec_cap_Wel']
 
         # Minimum constraint for storage content.
-        self.output_constraint_timeseries_minimum.loc[
+        self.output_minimum_timeseries.loc[
         :, self.outputs.str.contains('_storage')
         ] = self.plant_storage.loc[self.scenario_name, 'SOC_min_m3']
 
         # Maximum constraint for storage content.
-        self.output_constraint_timeseries_maximum.loc[
+        self.output_maximum_timeseries.loc[
         :, self.outputs.str.contains('_storage')
         ] = self.plant_storage.loc[self.scenario_name, 'SOC_max_m3']
+
+        # Optimization methods
+    def define_optimization_variables(
+            self,
+            optimization_problem: pyo.ConcreteModel,
+    ):
+        # Define variables.
+        optimization_problem.state_vector = pyo.Var(self.timesteps, [self.der_name], self.states)
+        optimization_problem.control_vector = pyo.Var(self.timesteps, [self.der_name], self.controls)
+        optimization_problem.output_vector = pyo.Var(self.timesteps, [self.der_name], self.outputs)
+
+    def define_optimization_constraints(
+        self,
+        optimization_problem: pyo.ConcreteModel,
+    ):
+
+        # Define shorthand for indexing 't+1'.
+        # - This implementation assumes that timesteps are always equally spaced.
+        timestep_interval = self.timesteps[1] - self.timesteps[0]
+
+        # Define constraints.
+        if optimization_problem.find_component('der_model_constraints') is None:
+            optimization_problem.der_model_constraints = pyo.ConstraintList()
+
+        # Initial state.
+        for state in self.states:
+            # Set initial state according to the initial state vector.
+            optimization_problem.der_model_constraints.add(
+                optimization_problem.state_vector[self.timesteps[0], self.der_name, state]
+                ==
+                self.state_vector_initial.at[state]
+            )
+
+        for timestep in self.timesteps[:-1]:
+            # State equation.
+            for state in self.states:
+                optimization_problem.der_model_constraints.add(
+                    optimization_problem.state_vector[timestep + timestep_interval, self.der_name, state]
+                    ==
+                    sum(
+                        self.state_matrix.at[state, state_other]
+                        * optimization_problem.state_vector[timestep, self.der_name, state_other]
+                        for state_other in self.states
+                    )
+                    + sum(
+                        self.control_matrix.at[state, control]
+                        * optimization_problem.control_vector[timestep, self.der_name, control]
+                        for control in self.controls
+                    )
+                    + sum(
+                        self.disturbance_matrix.at[state, disturbance]
+                        * self.disturbance_timeseries.at[timestep, disturbance]
+                        for disturbance in self.disturbances
+                    )
+                )
+
+        for timestep in self.timesteps:
+            # Output equation.
+            for output in self.outputs:
+                optimization_problem.der_model_constraints.add(
+                    optimization_problem.output_vector[timestep, self.der_name, output]
+                    ==
+                    sum(
+                        self.state_output_matrix.at[output, state]
+                        * optimization_problem.state_vector[timestep, self.der_name, state]
+                        for state in self.states
+                    )
+                    + sum(
+                        self.control_output_matrix.at[output, control]
+                        * optimization_problem.control_vector[timestep, self.der_name, control]
+                        for control in self.controls
+                    )
+                    + sum(
+                        self.disturbance_output_matrix.at[output, disturbance]
+                        * self.disturbance_timeseries.at[timestep, disturbance]
+                        for disturbance in self.disturbances
+                    )
+                )
+
+            # Output limits.
+            for output in self.outputs:
+                if self.chp_schedule is not None and 'active_power_Wel' in output:
+                    for chp in self.CHP_list:
+                        if chp in output and any(self.switches.str.contains(chp)):
+                            pass  # this is done in the script currently to support MILP
+                            # optimization_problem.der_model_constraints.add(
+                            #     optimization_problem.output_vector[timestep, self.der_name, output]
+                            #     >=
+                            #     self.output_minimum_timeseries.at[timestep, output]
+                            #     * self.chp_schedule.loc[timestep, chp+'_switch']
+                            # )
+                            # optimization_problem.der_model_constraints.add(
+                            #     optimization_problem.output_vector[timestep, self.der_name, output]
+                            #     <=
+                            #     self.output_maximum_timeseries.at[timestep, output]
+                            #     * self.chp_schedule.loc[timestep, chp+'_switch']
+                            # )
+                else:
+                    optimization_problem.der_model_constraints.add(
+                        optimization_problem.output_vector[timestep, self.der_name, output]
+                        >=
+                        self.output_minimum_timeseries.at[timestep, output]
+                    )
+                    optimization_problem.der_model_constraints.add(
+                        optimization_problem.output_vector[timestep, self.der_name, output]
+                        <=
+                        self.output_maximum_timeseries.at[timestep, output]
+                    )
+
+        # Control limits.
+        for timestep in self.timesteps:
+            # Feedstock input limits (maximum daily or hourly feed-in depending on available feedstock).
+            for control in self.controls:
+                if self.feedstock_limit_type == 'daily':
+                    if ('mass_flow' in control) and (timestep + dt.timedelta(days=1) - self.timestep_interval <= self.timestep_end):
+                        optimization_problem.der_model_constraints.add(
+                            sum(
+                                self.timestep_interval.seconds *
+                                optimization_problem.control_vector[timestep + i * self.timestep_interval, self.der_name, control]
+                                for i in range(int(dt.timedelta(days=1)/self.timestep_interval))
+                            )
+                            <= self.available_feedstock * 1000/365
+                        )
+                elif self.feedstock_limit_type == 'hourly':
+                    if ('mass_flow' in control) and (timestep + dt.timedelta(hours=1) - self.timestep_interval <= self.timestep_end):
+                        optimization_problem.der_model_constraints.add(
+                            sum(
+                                self.timestep_interval.seconds *
+                                optimization_problem.control_vector[
+                                    timestep + i * self.timestep_interval, self.der_name, control]
+                                for i in range(int(dt.timedelta(hours=1) / self.timestep_interval))
+                            )
+                            <= self.available_feedstock * 1000 / (365*24)
+                        )
+
+        # Final SOC storage
+        soc_end = self.plant_storage.loc[self.scenario_name, 'SOC_end']
+
+        if soc_end == 'init':
+            # Final SOC greater or equal to initial SOC
+            optimization_problem.der_model_constraints.add(
+                optimization_problem.output_vector[self.timesteps[-1], self.der_name, self.scenario_name
+                                                   + '_storage_content_m3']
+                == self.state_vector_initial[self.scenario_name + '_storage_content_m3']
+            )
+
+    def define_optimization_objective(
+            self,
+            optimization_problem: pyo.ConcreteModel,
+            price_timeseries: pd.DataFrame
+    ):
+
+        # Obtain timestep interval in hours, for conversion of power to energy.
+        timestep_interval_hours = (self.timesteps[1] - self.timesteps[0]) / pd.Timedelta('1h')
+
+        # Define objective.
+        if optimization_problem.find_component('objective') is None:
+            optimization_problem.objective = pyo.Objective(expr=0.0, sense=pyo.minimize)
+
+        optimization_problem.objective.expr += (
+            sum(
+                -1.0
+                * price_timeseries.at[timestep, 'price_value']
+                * optimization_problem.output_vector[timestep, self.der_name, 'active_power']
+                * timestep_interval_hours  # In Wh.
+                for timestep in self.timesteps
+            )
+        )
+
+        # Always defined here as the marginal cost of electric power generation from the CHPs
+        optimization_problem.objective.expr += (
+            sum(
+                self.marginal_cost
+                * sum(
+                    optimization_problem.output_vector[timestep, self.der_name, output]
+                    for output in self.outputs if 'active_power' in output and 'CHP' in output
+                )
+                * timestep_interval_hours  # In Wh.
+                for timestep in self.timesteps
+            )
+        )
+
+    def get_optimization_results(
+            self,
+            optimization_problem: pyo.ConcreteModel
+    ):
+        class ResultsDict(typing.Dict[str, pd.DataFrame]):
+            """Results dictionary object, i.e., a modified dictionary object with strings as keys and dataframes as values.
+
+            - When printed or represented as string, all dataframes are printed in full.
+            - Provides a method for storing all results dataframes to CSV files.
+            """
+
+            def __repr__(self) -> str:
+                """Obtain string representation of results."""
+
+                repr_string = ""
+                for key in self:
+                    repr_string += f"{key} = \n{self[key]}\n"
+
+                return repr_string
+
+            def to_csv(self, path: str) -> None:
+                """Store results to CSV files at given `path`."""
+
+                for key in self:
+                    self[key].to_csv(os.path.join(path, f'{key}.csv'))
+
+        # Instantiate results variables.
+        state_vector = pd.DataFrame(0.0, index=self.timesteps, columns=self.states)
+        control_vector = pd.DataFrame(0.0, index=self.timesteps, columns=self.controls)
+        output_vector = pd.DataFrame(0.0, index=self.timesteps, columns=self.outputs)
+
+        # Obtain results.
+        for timestep in self.timesteps:
+            for state in self.states:
+                state_vector.at[timestep, state] = (
+                    optimization_problem.state_vector[timestep, self.der_name, state].value
+                )
+            for control in self.controls:
+                control_vector.at[timestep, control] = (
+                    optimization_problem.control_vector[timestep, self.der_name, control].value
+                )
+            for output in self.outputs:
+                output_vector.at[timestep, output] = (
+                    optimization_problem.output_vector[timestep, self.der_name, output].value
+                )
+
+        return ResultsDict(
+            state_vector=state_vector,
+            control_vector=control_vector,
+            output_vector=output_vector
+        )
+
+
 
 
 class SimpleBiogasPlantModel(BiogasPlantModel):
@@ -578,7 +844,7 @@ class FlexibleBiogasPlantModel(BiogasPlantModel):
         super().define_output_constraint_timeseries()
 
         # Minimum constraint for own heat and power consumption.
-        self.output_constraint_timeseries_minimum.loc[
+        self.output_minimum_timeseries.loc[
             :, self.outputs.str.contains('_own_consumption')
         ] = 0.0
 

@@ -2,11 +2,13 @@
 feedstock feed-in on biogas production"""
 
 import numpy as np
-import bipmo.biogas_plant_models
+import bipmo.bipmo.biogas_plant_models
 import matplotlib.pyplot as plt
 
-# List of the biogas production potential in m3 of biogas per kg of feedstock [5]
-potential_sustrate_list = [
+plot = True  # if set to True, the script will produce plots
+
+# List of the biogas production potential in m3 of biogas per kg of feedstock
+potential_substrate_list = [
     # for corn silage
     0.203775,
     # for sugar beet silage
@@ -14,11 +16,11 @@ potential_sustrate_list = [
     ]
 
 # Selection of the feedstock type according to the scenario chosen
-potential_sustrate = potential_sustrate_list[0]
+potential_substrate = potential_substrate_list[0]
 
 # Load the scenario
 scenario_name = 'biogas_plant_1'
-bg = bipmo.biogas_plant_models.SimpleBiogasPlantModel(scenario_name)
+bg = bipmo.bipmo.biogas_plant_models.FlexibleBiogasPlantModel(scenario_name)
 
 # Feed-in regime
 u = np.array([0])
@@ -31,10 +33,8 @@ for i in range(len(bg.control_matrix.columns)-2):
 u = np.vstack((u, np.array([1])))  # Maximum feed-in regime
 u_int = np.vstack((u_int, np.array([0])))  # Zero feed-in regime
 
-
-
 # Initial state maximal production
-x0 = np.array([[potential_sustrate], [2000]])
+x0 = np.array([[potential_substrate], [2000]])
 
 # Duration of the simulation in hours
 length = 48
@@ -58,7 +58,7 @@ for i in range(0, deb_interruption+1):
     total_prod.append(total_prod[-1])
     x = bg.state_matrix.dot(x)+bg.control_matrix.dot(u)
     y = bg.state_output_matrix.dot(x) + bg.control_output_matrix.dot(u)
-    y1.append(x[0][scenario_name + '_prod_biogas_m3_s-1']/potential_sustrate*100)
+    y1.append(x[0][scenario_name + '_prod_biogas_m3_s-1']/potential_substrate*100)
     total_prod[-1] = total_prod[-1] + x[0][scenario_name + '_prod_biogas_m3_s-1']*bg.timestep_interval.seconds
     u_plot.append(100)
 
@@ -67,37 +67,36 @@ for i in range(deb_interruption+1, end_interruption+1):
     total_prod.append(total_prod[-1])
     x = bg.state_matrix.dot(x) + bg.control_matrix.dot(u_int)
     y = bg.state_output_matrix.dot(x) + bg.control_output_matrix.dot(u)
-    y1.append(x[0][scenario_name + '_prod_biogas_m3_s-1']/potential_sustrate*100)
+    y1.append(x[0][scenario_name + '_prod_biogas_m3_s-1']/potential_substrate*100)
     total_prod[-1] = total_prod[-1] + x[0][scenario_name + '_prod_biogas_m3_s-1']*bg.timestep_interval.seconds
     u_plot.append(0)
-
 
 # Simulation after restart dof feed-in
 for i in range(end_interruption+1, length+1):
     total_prod.append(total_prod[-1])
     x = bg.state_matrix.dot(x)+bg.control_matrix.dot(u)
     y = bg.state_output_matrix.dot(x) + bg.control_output_matrix.dot(u)
-    y1.append(x[0][scenario_name + '_prod_biogas_m3_s-1']/potential_sustrate*100)
+    y1.append(x[0][scenario_name + '_prod_biogas_m3_s-1']/potential_substrate*100)
     total_prod[-1] = total_prod[-1] + x[0][scenario_name + '_prod_biogas_m3_s-1']*bg.timestep_interval.seconds
     u_plot.append(100)
 
+if plot:
+    plt.plot(y1, linewidth=2, color='k')
+    plt.plot(u_plot, linewidth=2, color='k', linestyle='--', drawstyle='steps-pre')
+    plt.legend(["Biogas production (%)", "Feed-in regime (%)"])
+    plt.xticks(([0, 6, 12, 18, 24, 30, 36, 42, 48]))
+    plt.yticks([0, 25, 50, 75, 100])
+    plt.axhline(y=75, linestyle='--', color='k', linewidth=1)
+    plt.axhline(y=50, linestyle='--', color='k', linewidth=1)
+    plt.axhline(y=25, linestyle='--', color='k', linewidth=1)
+    plt.ylim(0, 100)
+    plt.xlabel('Time (h)')
 
-plt.plot(y1, linewidth=2, color='k')
-plt.plot(u_plot, linewidth=2, color='k', linestyle='--', drawstyle='steps-pre')
-plt.legend(["Biogas production (%)", "Feed-in regime (%)"])
-plt.xticks(([0, 6, 12, 18, 24, 30, 36, 42, 48]))
-plt.yticks([0, 25, 50, 75, 100])
-plt.axhline(y=75, linestyle='--', color='k', linewidth=1)
-plt.axhline(y=50, linestyle='--', color='k', linewidth=1)
-plt.axhline(y=25, linestyle='--', color='k', linewidth=1)
-plt.ylim(0, 100)
-plt.xlabel('Time (h)')
+    plt.show()
+    plt.close()
 
-plt.show()
-plt.close()
-
-plt.plot(total_prod)
-plt.xlabel('Time (h)')
-plt.ylabel('Total biogas production (m3)')
-plt.show()
-plt.close()
+    plt.plot(total_prod)
+    plt.xlabel('Time (h)')
+    plt.ylabel('Total biogas production (m3)')
+    plt.show()
+    plt.close()
