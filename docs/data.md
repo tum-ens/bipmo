@@ -35,6 +35,7 @@ Price time series.
 
 ### `biogas_plant_CHP`
 
+| Column | Unit | Description |
 | --- |:---:| --- |
 | `scenario_name` | | Unique scenario identifier.|
 | `electric_grid_name` | | Electric grid identifier as defined `electric grids` |
@@ -48,6 +49,8 @@ Price time series.
 | `timestep_interval` | | Time interval in format `HH:MM:SS` |
 
 ### `biogas_plant_feedstock`
+
+| Column | Unit | Description |
 | --- |:---:| --- |
 | `scenario_name` | | Unique scenario identifier.|
 | `electric_grid_name` | | Electric grid identifier as defined `electric grids` |
@@ -61,6 +64,8 @@ Price time series.
 | `timestep_interval` | | Time interval in format `HH:MM:SS` |
 
 ### `biogas_plant_storage`
+
+| Column | Unit | Description |
 | --- |:---:| --- |
 | `scenario_name` | | Unique scenario identifier.|
 | `electric_grid_name` | | Electric grid identifier as defined `electric grids` |
