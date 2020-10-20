@@ -12,12 +12,12 @@ import pandas as pd
 import scipy.linalg
 import os
 import inspect
-import typing
 import sys
 import datetime as dt
 import pyomo.environ as pyo
 
 import bipmo.utils
+
 
 class BiogasPlantModel(object):
     """
@@ -188,16 +188,6 @@ class BiogasPlantModel(object):
             self.plant_scenarios['scenario_name'] + '_storage_content_m3',
             name='state_name'
         )
-        #  TODO: if the above does not work, use below
-        # # State variables.
-        # self.states = pd.Index(
-        #     pd.concat([
-        #         # Storage biogas content.
-        #         self.plant_scenarios['scenario_name']
-        #         + '_storage_content_m3'
-        #     ]),
-        #     name='state_name'
-        # )
 
         # Output variables.
         self.outputs = pd.Index(
@@ -207,7 +197,6 @@ class BiogasPlantModel(object):
             name='output_name'
         )
 
-        # TODO: own consumption should be here as well
         self.outputs = pd.Index([
             # net active power output
             'active_power',
@@ -260,6 +249,17 @@ class BiogasPlantModel(object):
             self.timesteps,
             self.switches
         )
+
+        # Disturbance variables: add constant active and thermal power requirements
+        self.disturbances = pd.Index([
+            'active_power_requirement_const_Wel',
+            'thermal_power_requirement_const_Wth'
+        ], name='disturbance_name')
+
+        self.disturbances_data_set = {
+            'active_power_requirement_const_Wel': float(self.plant_scenarios.loc[self.scenario_name, 'const_power_requirement']),
+            'thermal_power_requirement_const_Wth': float(self.plant_scenarios.loc[self.scenario_name, 'const_heat_requirement']),
+        }
 
     def instantiate_state_space_matrices(self):
         # Instantiate empty state-space model matrices.
@@ -326,6 +326,26 @@ class BiogasPlantModel(object):
                     self.control_output_matrix.loc['thermal_power', control] \
                         = self.gain_heat[control][0]
 
+    def define_disturbance_timeseries(self):
+
+        self.disturbance_timeseries = pd.DataFrame(
+            0.0,
+            self.timesteps,
+            self.disturbances
+        )
+
+        # Reindex, interpolate and construct full disturbance timeseries.
+        for disturbance in self.disturbances:
+            self.disturbance_timeseries[disturbance] = self.disturbances_data_set[disturbance]
+
+    def define_disturbance_output_matrix(self):
+        # Add a constant heat and power demand
+        self.disturbance_output_matrix.loc['active_power', 'active_power_requirement_const_Wel']\
+            = -1.0
+
+        self.disturbance_output_matrix.loc['thermal_power', 'thermal_power_requirement_const_Wth']\
+            = -1.0
+
     def define_output_constraint_timeseries(self):
 
         # Instantiate constraint timeseries.
@@ -361,7 +381,7 @@ class BiogasPlantModel(object):
         :, self.outputs.str.contains('_storage')
         ] = self.plant_storage.loc[self.scenario_name, 'SOC_max_m3']
 
-        # Optimization methods
+    # Optimization methods
     def define_optimization_variables(
             self,
             optimization_problem: pyo.ConcreteModel,
@@ -574,8 +594,6 @@ class BiogasPlantModel(object):
         )
 
 
-
-
 class SimpleBiogasPlantModel(BiogasPlantModel):
     """ Creates a linear state-space model for a biogas power plant, given data about the plant.
         The class defines and creates, among other attributes, the discretized state, control, state_output and
@@ -607,12 +625,13 @@ class SimpleBiogasPlantModel(BiogasPlantModel):
             connect_electric_grid
         )
 
-        # Get biogas production rate (constant over time)
-        self.biogas_prod_rate = float(self.plant_scenarios.loc[self.scenario_name, 'init_state_digester'])
-
         # Disturbance variables.
         self.disturbances = pd.Index(['biogas_production_rate_m3_s-1'],
-                                     name='disturbance_name')
+                                     name='disturbance_name').union(self.disturbances)
+
+        # Add the constant biogas flow to the dataset (load from scenario data)
+        self.disturbances_data_set['biogas_production_rate_m3_s-1'] = \
+            float(self.plant_scenarios.loc[self.scenario_name, 'init_state_digester'])
 
         self.instantiate_state_space_matrices()
 
@@ -631,8 +650,6 @@ class SimpleBiogasPlantModel(BiogasPlantModel):
         self.define_state_output_matrix()
         self.define_control_output_matrix()
 
-        # TODO: subtract a constant heat and power requirement
-
         # Define the disturbance matrix.
         self.disturbance_matrix.loc[self.scenario_name + '_storage_content_m3',
                                     'biogas_production_rate_m3_s-1'] \
@@ -640,6 +657,7 @@ class SimpleBiogasPlantModel(BiogasPlantModel):
 
         self.define_initial_state()
         self.define_disturbance_timeseries()
+        self.define_disturbance_output_matrix()
         self.define_output_constraint_timeseries()
 
     # Define the initial state (either digester process starting or already active).
@@ -649,16 +667,6 @@ class SimpleBiogasPlantModel(BiogasPlantModel):
                 [self.plant_storage.loc[self.scenario_name, 'SOC_init_m3']],
                 index=self.states
             )
-        )
-
-    # Define disturbance timeseries.
-    def define_disturbance_timeseries(self):
-
-        # Reindex, interpolate and construct full disturbance timeseries.
-        self.disturbance_timeseries = pd.DataFrame(
-            self.biogas_prod_rate,
-            self.timesteps,
-            self.disturbances
         )
 
 
@@ -726,10 +734,6 @@ class FlexibleBiogasPlantModel(BiogasPlantModel):
             name='output_name'
         ).union(self.outputs)
 
-        # Disturbance variables (empty).
-        self.disturbances = pd.Index([None],
-                                     name='disturbance_name')
-
         self.instantiate_state_space_matrices()
 
         # Heat requirement to increase the introduced feedstock's temperature
@@ -787,6 +791,7 @@ class FlexibleBiogasPlantModel(BiogasPlantModel):
         # Apply the functions.
         self.define_initial_state()
         self.define_disturbance_timeseries()
+        self.define_disturbance_output_matrix()
         self.define_output_constraint_timeseries()
         self.discretize_model()
 
@@ -807,16 +812,6 @@ class FlexibleBiogasPlantModel(BiogasPlantModel):
                     index=self.states
                 )
             )
-
-    # Define zero disturbance timeseries.
-    def define_disturbance_timeseries(self):
-
-        # Reindex, interpolate and construct full disturbance timeseries.
-        self.disturbance_timeseries = pd.DataFrame(
-            0.0,
-            self.timesteps,
-            self.disturbances
-        )
 
     # Define output and control constraints.
     def define_output_constraint_timeseries(self):

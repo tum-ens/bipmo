@@ -67,63 +67,63 @@ for i in range(2):
         i = 3  # will stop from iterating again
 
     # Get the biogas plant model and set the switches flag accordingly
-    flexible_biogas_plant_model = bipmo.biogas_plant_models.FlexibleBiogasPlantModel(scenario_name)
+    biogas_plant_model = bipmo.biogas_plant_models.make_biogas_plant_model(scenario_name)
 
     if (not is_milp) and run_milp:
         # set the chp_schedule resulting from the milp optimization
-        flexible_biogas_plant_model.chp_schedule = chp_schedule
+        biogas_plant_model.chp_schedule = chp_schedule
 
     # Instantiate optimization problem.
     optimization_problem = pyo.ConcreteModel()
 
-    flexible_biogas_plant_model.define_optimization_variables(optimization_problem)
-    flexible_biogas_plant_model.define_optimization_constraints(optimization_problem)
+    biogas_plant_model.define_optimization_variables(optimization_problem)
+    biogas_plant_model.define_optimization_constraints(optimization_problem)
 
     if is_milp:
         # define binary variables for MILP solution
-        optimization_problem.binary_variables = pyo.Var(flexible_biogas_plant_model.timesteps,
-                                                        [flexible_biogas_plant_model.der_name],
-                                                        flexible_biogas_plant_model.switches,
+        optimization_problem.binary_variables = pyo.Var(biogas_plant_model.timesteps,
+                                                        [biogas_plant_model.der_name],
+                                                        biogas_plant_model.switches,
                                                         domain=pyo.Binary)
 
-        for timestep in flexible_biogas_plant_model.timesteps:
-            for output in flexible_biogas_plant_model.outputs:
+        for timestep in biogas_plant_model.timesteps:
+            for output in biogas_plant_model.outputs:
                 if 'active_power_Wel' in output:
-                    for chp in flexible_biogas_plant_model.CHP_list:
-                        if chp in output and any(flexible_biogas_plant_model.switches.str.contains(chp)):
+                    for chp in biogas_plant_model.CHP_list:
+                        if chp in output and any(biogas_plant_model.switches.str.contains(chp)):
                             optimization_problem.der_model_constraints.add(
-                                optimization_problem.output_vector[timestep, flexible_biogas_plant_model.der_name, output]
+                                optimization_problem.output_vector[timestep, biogas_plant_model.der_name, output]
                                 >=
-                                flexible_biogas_plant_model.output_minimum_timeseries.at[timestep, output]
-                                * optimization_problem.binary_variables[timestep, flexible_biogas_plant_model.der_name, chp + '_switch']
+                                biogas_plant_model.output_minimum_timeseries.at[timestep, output]
+                                * optimization_problem.binary_variables[timestep, biogas_plant_model.der_name, chp + '_switch']
                             )
                             optimization_problem.der_model_constraints.add(
-                                optimization_problem.output_vector[timestep, flexible_biogas_plant_model.der_name, output]
+                                optimization_problem.output_vector[timestep, biogas_plant_model.der_name, output]
                                 <=
-                                flexible_biogas_plant_model.output_maximum_timeseries.at[timestep, output]
-                                * optimization_problem.binary_variables[timestep, flexible_biogas_plant_model.der_name, chp + '_switch']
+                                biogas_plant_model.output_maximum_timeseries.at[timestep, output]
+                                * optimization_problem.binary_variables[timestep, biogas_plant_model.der_name, chp + '_switch']
                             )
     else:  # define the constraints without the binary variables
-        for timestep in flexible_biogas_plant_model.timesteps:
-            for output in flexible_biogas_plant_model.outputs:
-                if flexible_biogas_plant_model.chp_schedule is not None and 'active_power_Wel' in output:
-                    for chp in flexible_biogas_plant_model.CHP_list:
-                        if chp in output and any(flexible_biogas_plant_model.switches.str.contains(chp)):
+        for timestep in biogas_plant_model.timesteps:
+            for output in biogas_plant_model.outputs:
+                if biogas_plant_model.chp_schedule is not None and 'active_power_Wel' in output:
+                    for chp in biogas_plant_model.CHP_list:
+                        if chp in output and any(biogas_plant_model.switches.str.contains(chp)):
                             optimization_problem.der_model_constraints.add(
-                                optimization_problem.output_vector[timestep, flexible_biogas_plant_model.der_name, output]
+                                optimization_problem.output_vector[timestep, biogas_plant_model.der_name, output]
                                 >=
-                                flexible_biogas_plant_model.output_minimum_timeseries.at[timestep, output]
-                                * flexible_biogas_plant_model.chp_schedule.loc[timestep, chp+'_switch']
+                                biogas_plant_model.output_minimum_timeseries.at[timestep, output]
+                                * biogas_plant_model.chp_schedule.loc[timestep, chp + '_switch']
                             )
                             optimization_problem.der_model_constraints.add(
-                                optimization_problem.output_vector[timestep, flexible_biogas_plant_model.der_name, output]
+                                optimization_problem.output_vector[timestep, biogas_plant_model.der_name, output]
                                 <=
-                                flexible_biogas_plant_model.output_maximum_timeseries.at[timestep, output]
-                                * flexible_biogas_plant_model.chp_schedule.loc[timestep, chp+'_switch']
+                                biogas_plant_model.output_maximum_timeseries.at[timestep, output]
+                                * biogas_plant_model.chp_schedule.loc[timestep, chp + '_switch']
                             )
 
     # Define the optimization objective with the price timeseries
-    flexible_biogas_plant_model.define_optimization_objective(optimization_problem, price_timeseries)
+    biogas_plant_model.define_optimization_objective(optimization_problem, price_timeseries)
 
     # Solve optimization problem.
     optimization_problem.dual = pyo.Suffix(direction=pyo.Suffix.IMPORT)
@@ -137,18 +137,18 @@ for i in range(2):
     if is_milp:
         # get the MILP solution for the biogas plant schedule
         binaries = optimization_problem.binary_variables
-        timesteps = flexible_biogas_plant_model.timesteps
-        chp_schedule = flexible_biogas_plant_model.chp_schedule
+        timesteps = biogas_plant_model.timesteps
+        chp_schedule = biogas_plant_model.chp_schedule
         for timestep in timesteps:
-            for chp in flexible_biogas_plant_model.CHP_list:
+            for chp in biogas_plant_model.CHP_list:
                 chp_schedule.loc[timestep, chp+'_switch'] = \
-                    binaries[timestep, flexible_biogas_plant_model.der_name, chp+'_switch'].value
+                    binaries[timestep, biogas_plant_model.der_name, chp + '_switch'].value
 
 
-results = flexible_biogas_plant_model.get_optimization_results(optimization_problem)
+results = biogas_plant_model.get_optimization_results(optimization_problem)
 
 print(results)
 
 if plots:
-    bipmo.plots.generate_biogas_plant_plots(results, flexible_biogas_plant_model, results_path, price_timeseries)
+    bipmo.plots.generate_biogas_plant_plots(results, biogas_plant_model, results_path, price_timeseries)
 

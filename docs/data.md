@@ -25,7 +25,9 @@ Defines the scenario.
 | `availability_substrate_ton_per_year` | Ton | Yearly availability of the substrate. |
 | `availability_limit_type` | | Timeframe of the availability limit for the calculation of the constraint, entry `daily` or `yearly`. |
 | `model_type` | | Model chosen for the simulation, with (entry `flexible`) or without (entry `simple`) the modelling of the digestion process. |
-| `marginal_cost_EUR_Wh-1` | €/Wh | Marginal cost of electric power generation from the CHPs. |
+| `const_power_requirement` | W | Constant active power requirement of the biogas plant, for e.g. stirring equipment, etc. |
+| `const_heat_requirement` | Wth | Constant thermal power requirement of the biogas plant to compensate heat losses of the digester. |
+
 
 ### `price_timeseries`
 
