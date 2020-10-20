@@ -169,11 +169,11 @@
 <p>BiPMo is configured through the use of CSV files, where each CSV file represents a table as defined below (the file name is interpreted as the table name).</p>
 <div class="section" id="biogas-plant-scenario">
 <h2><code class="docutils literal notranslate"><span class="pre">biogas_plant_scenario</span></code><a class="headerlink" href="#biogas-plant-scenario" title="Permalink to this headline">¶</a></h2>
-<p>Scenario definition.</p>
+<p>Defines the scenario.</p>
 <table border="1" class="docutils">
 <thead>
 <tr>
-<th>Column</th>
+<th>Parameter</th>
 <th align="center">Unit</th>
 <th>Description</th>
 </tr>
@@ -185,59 +185,79 @@
 <td>Unique scenario identifier.</td>
 </tr>
 <tr>
-<td><code>electric_grid_name</code></td>
+<td><code>feedstock_type</code></td>
 <td align="center"></td>
-<td>Electric grid identifier as defined <code>electric grids</code></td>
+<td>Feedstock identifier as defined in <code>biogas_plant_feedstock</code>.</td>
 </tr>
 <tr>
-<td><code>thermal_grid_name</code></td>
+<td><code>storage_name</code></td>
 <td align="center"></td>
-<td>Thermal grid identifier as defined <code>thermal grids</code></td>
+<td>Storage identifier as defined <code>biogas_plant_storage</code>.</td>
 </tr>
 <tr>
-<td><code>parameter_set</code></td>
-<td align="center"></td>
-<td>Parameter set identifier as defined in <code>parameters</code></td>
-</tr>
-<tr>
-<td><code>price_type</code></td>
-<td align="center"></td>
-<td>Type identifier as defined in <code>price_timeseries</code></td>
-</tr>
-<tr>
-<td><code>electric_grid_operation_limit_type</code></td>
-<td align="center"></td>
-<td>Operation limit type as defined in <code>electric_grid_operation_limit_types</code></td>
-</tr>
-<tr>
-<td><code>thermal_grid_operation_limit_type</code></td>
-<td align="center"></td>
-<td>Type identifier as defined in <code>thermal_grid_operation_limit_types</code></td>
-</tr>
-<tr>
-<td><code>timestep_start</code></td>
+<td><code>time_start</code></td>
 <td align="center"></td>
 <td>Start timestep in format <code>yyyy-mm-ddTHH:MM:SS</code> (according to ISO 8601).</td>
 </tr>
 <tr>
-<td><code>timestep_end</code></td>
+<td><code>time_end</code></td>
 <td align="center"></td>
 <td>End timestep in format <code>yyyy-mm-ddTHH:MM:SS</code> (according to ISO 8601).</td>
 </tr>
 <tr>
-<td><code>timestep_interval</code></td>
+<td><code>time_step</code></td>
 <td align="center"></td>
-<td>Time interval in format <code>HH:MM:SS</code></td>
+<td>Time interval in format <code>HH:MM:SS</code>.</td>
+</tr>
+<tr>
+<td><code>temperature_outside</code></td>
+<td align="center">°C</td>
+<td>Temperature outside the digester.</td>
+</tr>
+<tr>
+<td><code>CHP_name</code></td>
+<td align="center"></td>
+<td>List of the CHPs' identifiers in format <code>name1 name2 name3</code> (add the name for each new CHP included), as defined in <code>biogas_plant_CHP</code>.</td>
+</tr>
+<tr>
+<td><code>digester_temp</code></td>
+<td align="center">°C</td>
+<td>Temperature of the digestion process.</td>
+</tr>
+<tr>
+<td><code>init_state_digester</code></td>
+<td align="center">m^3/s</td>
+<td>Initial value of the biogas production rate, 0 if entry <code>starting</code>.</td>
+</tr>
+<tr>
+<td><code>availability_substrate_ton_per_year</code></td>
+<td align="center">Ton</td>
+<td>Yearly availability of the substrate.</td>
+</tr>
+<tr>
+<td><code>availability_limit_type</code></td>
+<td align="center"></td>
+<td>Timeframe of the availability limit for the calculation of the constraint, entry <code>daily</code> or <code>yearly</code>.</td>
+</tr>
+<tr>
+<td><code>model_type</code></td>
+<td align="center"></td>
+<td>Model chosen for the simulation, with (entry <code>flexible</code>) or without (entry <code>simple</code>) the modelling of the digestion process.</td>
+</tr>
+<tr>
+<td><code>marginal_cost_EUR_Wh-1</code></td>
+<td align="center">€/Wh</td>
+<td>Marginal cost of electric power generation from the CHPs.</td>
 </tr>
 </tbody>
 </table></div>
 <div class="section" id="price-timeseries">
 <h2><code class="docutils literal notranslate"><span class="pre">price_timeseries</span></code><a class="headerlink" href="#price-timeseries" title="Permalink to this headline">¶</a></h2>
-<p>Price time series.</p>
+<p>Contains price time series data.</p>
 <table border="1" class="docutils">
 <thead>
 <tr>
-<th>Column</th>
+<th>Parameter</th>
 <th align="center">Unit</th>
 <th>Description</th>
 </tr>
@@ -256,196 +276,139 @@
 <tr>
 <td><code>price_value</code></td>
 <td align="center">€/Wh</td>
-<td>Price value</td>
+<td>Price value.</td>
 </tr>
 </tbody>
 </table></div>
 <div class="section" id="biogas-plant-chp">
 <h2><code class="docutils literal notranslate"><span class="pre">biogas_plant_CHP</span></code><a class="headerlink" href="#biogas-plant-chp" title="Permalink to this headline">¶</a></h2>
+<p>Contains data about the CHP systems used in the scenario.</p>
 <table border="1" class="docutils">
 <thead>
 <tr>
-<th>Column</th>
+<th>Parameter</th>
 <th align="center">Unit</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>scenario_name</code></td>
+<td><code>CHP_name</code></td>
 <td align="center"></td>
-<td>Unique scenario identifier.</td>
+<td>Unique CHP identifier.</td>
 </tr>
 <tr>
-<td><code>electric_grid_name</code></td>
-<td align="center"></td>
-<td>Electric grid identifier as defined <code>electric grids</code></td>
+<td><code>therm_eff</code></td>
+<td align="center">%</td>
+<td>Thermal efficiency of the CHP.</td>
 </tr>
 <tr>
-<td><code>thermal_grid_name</code></td>
-<td align="center"></td>
-<td>Thermal grid identifier as defined <code>thermal grids</code></td>
+<td><code>elec_eff</code></td>
+<td align="center">%</td>
+<td>Electrical efficiency of the CHP.</td>
 </tr>
 <tr>
-<td><code>parameter_set</code></td>
-<td align="center"></td>
-<td>Parameter set identifier as defined in <code>parameters</code></td>
+<td><code>elec_cap_Wel</code></td>
+<td align="center">We</td>
+<td>Maximum active power output of the CHP.</td>
 </tr>
 <tr>
-<td><code>price_type</code></td>
-<td align="center"></td>
-<td>Type identifier as defined in <code>price_timeseries</code></td>
+<td><code>elec_min_Wel</code></td>
+<td align="center">We</td>
+<td>Minimum active power output of the CHP.</td>
 </tr>
 <tr>
-<td><code>electric_grid_operation_limit_type</code></td>
+<td><code>power_factor</code></td>
 <td align="center"></td>
-<td>Operation limit type as defined in <code>electric_grid_operation_limit_types</code></td>
+<td>Power factor of the generator.</td>
 </tr>
 <tr>
-<td><code>thermal_grid_operation_limit_type</code></td>
-<td align="center"></td>
-<td>Type identifier as defined in <code>thermal_grid_operation_limit_types</code></td>
-</tr>
-<tr>
-<td><code>timestep_start</code></td>
-<td align="center"></td>
-<td>Start timestep in format <code>yyyy-mm-ddTHH:MM:SS</code> (according to ISO 8601).</td>
-</tr>
-<tr>
-<td><code>timestep_end</code></td>
-<td align="center"></td>
-<td>End timestep in format <code>yyyy-mm-ddTHH:MM:SS</code> (according to ISO 8601).</td>
-</tr>
-<tr>
-<td><code>timestep_interval</code></td>
-<td align="center"></td>
-<td>Time interval in format <code>HH:MM:SS</code></td>
+<td><code>ramp_capacity_W_min</code></td>
+<td align="center">We/min</td>
+<td>Ramp capacity of the CHP.</td>
 </tr>
 </tbody>
 </table></div>
 <div class="section" id="biogas-plant-feedstock">
 <h2><code class="docutils literal notranslate"><span class="pre">biogas_plant_feedstock</span></code><a class="headerlink" href="#biogas-plant-feedstock" title="Permalink to this headline">¶</a></h2>
+<p>Contains data about the feedstock used in the scenario.</p>
 <table border="1" class="docutils">
 <thead>
 <tr>
-<th>Column</th>
+<th>Parameter</th>
 <th align="center">Unit</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>scenario_name</code></td>
+<td><code>feedstock_type</code></td>
 <td align="center"></td>
-<td>Unique scenario identifier.</td>
+<td>Unique feedstock identifier.</td>
 </tr>
 <tr>
-<td><code>electric_grid_name</code></td>
-<td align="center"></td>
-<td>Electric grid identifier as defined <code>electric grids</code></td>
+<td><code>DM</code></td>
+<td align="center">%</td>
+<td>Dry matter content of the substrate.</td>
 </tr>
 <tr>
-<td><code>thermal_grid_name</code></td>
-<td align="center"></td>
-<td>Thermal grid identifier as defined <code>thermal grids</code></td>
+<td><code>VS</code></td>
+<td align="center">%</td>
+<td>Volatile solids content of the dry matter.</td>
 </tr>
 <tr>
-<td><code>parameter_set</code></td>
-<td align="center"></td>
-<td>Parameter set identifier as defined in <code>parameters</code></td>
+<td><code>biogas_yield_m3_kgVS-1</code></td>
+<td align="center">m^3/s</td>
+<td>Biogas production potential of the volatile solids contained in the substrate.</td>
 </tr>
 <tr>
-<td><code>price_type</code></td>
-<td align="center"></td>
-<td>Type identifier as defined in <code>price_timeseries</code></td>
+<td><code>methane_content</code></td>
+<td align="center">%</td>
+<td>Biomethane content of the biogas produced.</td>
 </tr>
 <tr>
-<td><code>electric_grid_operation_limit_type</code></td>
-<td align="center"></td>
-<td>Operation limit type as defined in <code>electric_grid_operation_limit_types</code></td>
-</tr>
-<tr>
-<td><code>thermal_grid_operation_limit_type</code></td>
-<td align="center"></td>
-<td>Type identifier as defined in <code>thermal_grid_operation_limit_types</code></td>
-</tr>
-<tr>
-<td><code>timestep_start</code></td>
-<td align="center"></td>
-<td>Start timestep in format <code>yyyy-mm-ddTHH:MM:SS</code> (according to ISO 8601).</td>
-</tr>
-<tr>
-<td><code>timestep_end</code></td>
-<td align="center"></td>
-<td>End timestep in format <code>yyyy-mm-ddTHH:MM:SS</code> (according to ISO 8601).</td>
-</tr>
-<tr>
-<td><code>timestep_interval</code></td>
-<td align="center"></td>
-<td>Time interval in format <code>HH:MM:SS</code></td>
+<td><code>time_constant_h</code></td>
+<td align="center">hours</td>
+<td>time constant for the first order digestion model.</td>
 </tr>
 </tbody>
 </table></div>
 <div class="section" id="biogas-plant-storage">
 <h2><code class="docutils literal notranslate"><span class="pre">biogas_plant_storage</span></code><a class="headerlink" href="#biogas-plant-storage" title="Permalink to this headline">¶</a></h2>
+<p>Contains data about the storage used in the scenario.</p>
 <table border="1" class="docutils">
 <thead>
 <tr>
-<th>Column</th>
+<th>Parameter</th>
 <th align="center">Unit</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>scenario_name</code></td>
+<td><code>storage_name</code></td>
 <td align="center"></td>
-<td>Unique scenario identifier.</td>
+<td>Unique storage identifier.</td>
 </tr>
 <tr>
-<td><code>electric_grid_name</code></td>
-<td align="center"></td>
-<td>Electric grid identifier as defined <code>electric grids</code></td>
+<td><code>SOC_min_m3</code></td>
+<td align="center">m^3</td>
+<td>Minimal state of charge of the storage.</td>
 </tr>
 <tr>
-<td><code>thermal_grid_name</code></td>
-<td align="center"></td>
-<td>Thermal grid identifier as defined <code>thermal grids</code></td>
+<td><code>SOC_max_m3</code></td>
+<td align="center">m^3</td>
+<td>Maximal state of charge of the storage.</td>
 </tr>
 <tr>
-<td><code>parameter_set</code></td>
-<td align="center"></td>
-<td>Parameter set identifier as defined in <code>parameters</code></td>
+<td><code>SOC_init_m3</code></td>
+<td align="center">m^3</td>
+<td>Initial state of charge of the storage.</td>
 </tr>
 <tr>
-<td><code>price_type</code></td>
+<td><code>SOC_end</code></td>
 <td align="center"></td>
-<td>Type identifier as defined in <code>price_timeseries</code></td>
-</tr>
-<tr>
-<td><code>electric_grid_operation_limit_type</code></td>
-<td align="center"></td>
-<td>Operation limit type as defined in <code>electric_grid_operation_limit_types</code></td>
-</tr>
-<tr>
-<td><code>thermal_grid_operation_limit_type</code></td>
-<td align="center"></td>
-<td>Type identifier as defined in <code>thermal_grid_operation_limit_types</code></td>
-</tr>
-<tr>
-<td><code>timestep_start</code></td>
-<td align="center"></td>
-<td>Start timestep in format <code>yyyy-mm-ddTHH:MM:SS</code> (according to ISO 8601).</td>
-</tr>
-<tr>
-<td><code>timestep_end</code></td>
-<td align="center"></td>
-<td>End timestep in format <code>yyyy-mm-ddTHH:MM:SS</code> (according to ISO 8601).</td>
-</tr>
-<tr>
-<td><code>timestep_interval</code></td>
-<td align="center"></td>
-<td>Time interval in format <code>HH:MM:SS</code></td>
+<td>State of charge of the storage at the last time step, entry <code>init</code> to define the end value equal to the initial value.</td>
 </tr>
 </tbody>
 </table></div>
