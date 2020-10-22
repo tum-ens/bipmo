@@ -80,7 +80,7 @@ def generate_biogas_plant_plots(
 
         # ax2 = plt.twinx(ax1)
         ax1.xaxis.set_major_formatter(matplotlib.dates.DateFormatter(x_label_date_format))
-        ax1.set_xlim((bg.timesteps[0].toordinal(), bg.timesteps[-1].toordinal()))
+        ax1.set_xlim((bg.timesteps[0], bg.timesteps[-1]))
         ax1.set_xlabel(x_axis_label)
         # ax2.set_ylabel('Power [p.u.]') if in_per_unit else ax2.set_ylabel('Power [W]')
         # ax2.set_ylim((0.0, 1.0)) if in_per_unit else ax2.set_ylim((0.0, 30.0))
@@ -109,7 +109,7 @@ def generate_biogas_plant_plots(
 
         # ax2 = plt.twinx(ax1)
         ax1.xaxis.set_major_formatter(matplotlib.dates.DateFormatter(x_label_date_format))
-        ax1.set_xlim((bg.timesteps[0].toordinal(), bg.timesteps[-1].toordinal()))
+        ax1.set_xlim((bg.timesteps[0], bg.timesteps[-1]))
         ax1.set_xlabel(x_axis_label)
         # ax2.set_ylabel('Power [p.u.]') if in_per_unit else ax2.set_ylabel('Power [W]')
         # ax2.set_ylim((0.0, 1.0)) if in_per_unit else ax2.set_ylim((0.0, 30.0))
@@ -138,7 +138,7 @@ def generate_biogas_plant_plots(
 
         # ax2 = plt.twinx(ax1)
         ax1.xaxis.set_major_formatter(matplotlib.dates.DateFormatter(x_label_date_format))
-        ax1.set_xlim((bg.timesteps[0].toordinal(), bg.timesteps[-1].toordinal()))
+        ax1.set_xlim((bg.timesteps[0], bg.timesteps[-1]))
         ax1.set_xlabel(x_axis_label)
         # ax2.set_ylabel('Power [p.u.]') if in_per_unit else ax2.set_ylabel('Power [W]')
         # ax2.set_ylim((0.0, 1.0)) if in_per_unit else ax2.set_ylim((0.0, 30.0))
@@ -192,7 +192,7 @@ def generate_biogas_plant_plots(
             color=colors[1],
             linewidth=linewidth)
         ax1.xaxis.set_major_formatter(matplotlib.dates.DateFormatter(x_label_date_format))
-        ax1.set_xlim((bg.timesteps[0].toordinal(), bg.timesteps[-1].toordinal()))
+        ax1.set_xlim((bg.timesteps[0], bg.timesteps[-1]))
         ax1.set_xlabel(x_axis_label)
         ax2.set_ylabel(f'{price_timeseries["price_type"][0]} (EUR/kWh)')
         #ax2.set_ylim((0.0, 1.0)) if in_per_unit else ax2.set_ylim((0.0, 30.0)
