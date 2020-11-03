@@ -22,7 +22,7 @@ Defines the scenario.
 | `CHP_name` | | List of the CHPs' identifiers in format `name1 name2 name3` (add the name for each new CHP included), as defined in `biogas_plant_CHP`. |
 | `digester_temp` | °C | Temperature of the digestion process. |
 | `init_state_digester` | m^3/s | Initial value of the biogas production rate, 0 if entry `starting`. |
-| `availability_substrate_ton_per_year` | Ton | Yearly availability of the substrate. |
+| `availability_substrate_ton_per_year` | ton/a | Yearly availability of the substrate. |
 | `availability_limit_type` | | Timeframe of the availability limit for the calculation of the constraint, entry `daily` or `yearly`. |
 | `model_type` | | Model chosen for the simulation, with (entry `flexible`) or without (entry `simple`) the modelling of the digestion process. |
 | `const_power_requirement` | W | Constant active power requirement of the biogas plant, for e.g. stirring equipment, etc. |
