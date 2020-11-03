@@ -1,7 +1,7 @@
 # BiPMo
 BiPMo (Biogas Plant Model) is a simulation framework for the optimal operation of a biogas plant in a given scenario that works both stand-alone and in combination with the simulation environment [FLEDGE](https://tumcreate-estl.github.io/fledge/develop/index.html).
 
-The full documentation can be found [here](https://tum-ens.github.io/bipmo/develop/index.html)
+The full documentation can be found [here](https://tum-ens.github.io/bipmo/develop/index.html).
 
 ## Installation
 
